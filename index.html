@@ -393,7 +393,7 @@ function ambSet(g, f, sec=1.2){
     lp.frequency.cancelScheduledValues(t); lp.frequency.setValueAtTime(lp.frequency.value,t); lp.frequency.exponentialRampToValueAtTime(f,t+sec);
   } else { amb.volume=muted?0:Math.min(1,g); }
 }
-function ambRoom(id,sec){ if(!ambOn) return; OUTSIDE[id] ? ambSet(.85,16000,sec) : ambSet(.55,750,sec); }
+function ambRoom(id,sec){ if(!ambOn) return; OUTSIDE[id] ? ambSet(.85,16000,sec) : ambSet(.18,550,sec); }
 function sndIcon(){ $('#snd').innerHTML = muted
   ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
   : '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>'; }
