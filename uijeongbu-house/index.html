@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>의정부, 2층 끝 집 — 붓다 섯다</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#efe8dc;--dim:#a39c90;--accent:#f0cf95;--card:rgba(22,23,27,.94)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:#0b0b0d;color:var(--ink);font-family:'Gowun Dodum',sans-serif;overflow:hidden}
+#app{position:relative;max-width:520px;height:100%;margin:0 auto;overflow:hidden;background:#000}
+button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+
+/* 뷰어 */
+#viewer{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
+#stage{position:absolute;top:0;left:0;height:100%;will-change:transform;transform-origin:0 0}
+#scene{position:absolute;inset:0;transform-origin:50% 50%}
+#scene img{height:100%;display:block;pointer-events:none;-webkit-user-drag:none}
+#veil{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s}
+#veil.on{opacity:1}
+
+.hot{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;cursor:pointer}
+.hot::before{content:'';position:absolute;inset:15px;border-radius:50%;background:rgba(255,235,200,.9);box-shadow:0 0 12px 4px rgba(255,210,150,.55)}
+.hot::after{content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(255,225,180,.8);animation:ring 2s ease-out infinite}
+.hot.found::before{background:rgba(255,255,255,.35);box-shadow:none;inset:19px}
+.hot.found::after{display:none}
+@keyframes ring{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.go{position:absolute;margin:-26px 0 0 -26px;width:52px;height:52px;border-radius:50%;background:rgba(10,10,12,.45);border:1.5px solid rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.go svg{width:22px;height:22px}
+.go span{position:absolute;top:56px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:12px;background:rgba(10,10,12,.55);padding:3px 9px;border-radius:99px}
+
+/* 상단·하단 */
+#top{position:absolute;top:0;left:0;right:0;padding:16px 18px 30px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(rgba(0,0,0,.55),transparent);pointer-events:none;z-index:5}
+#place{font-family:'Gowun Batang',serif;font-size:17px;text-shadow:0 1px 6px #000}
+#count{font-size:12px;color:#ddd;text-shadow:0 1px 4px #000;padding-top:3px}
+#topR{display:flex;align-items:center;gap:12px}
+#snd{pointer-events:auto;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center}
+#snd svg{width:15px;height:15px}
+#hint{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:12px;color:#ddd;text-shadow:0 1px 4px #000;pointer-events:none;transition:opacity .6s;z-index:5}
+#bottom{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 22px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:5}
+.chip{font-size:13px;padding:8px 14px;border-radius:99px;background:rgba(20,20,24,.6);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.chip small{color:var(--accent);margin-left:4px}
+
+/* 카드 */
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-radius:18px 18px 0 0;padding:16px 22px 26px;transform:translateY(105%);transition:transform .4s cubic-bezier(.2,.8,.2,1);max-height:82%;overflow:auto}
+#sheet.on{transform:none}
+#shade{position:absolute;inset:0;z-index:19;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .4s}
+#shade.on{opacity:1;pointer-events:auto}
+#shot{width:100%;aspect-ratio:1/1;border-radius:10px;background-color:#111;background-repeat:no-repeat;margin-bottom:16px;position:relative;overflow:hidden}
+#sheet h3{margin:0 0 10px;font-family:'Gowun Batang',serif;font-size:18px;color:var(--accent)}
+#sheet p{margin:0;font-family:'Gowun Batang',serif;font-size:15.5px;line-height:1.9;white-space:pre-line}
+#sheet .row{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+#sheet .close{font-size:13px;color:var(--dim);padding:6px 0}
+#sheet .next{font-size:13px;color:var(--accent);padding:6px 0}
+.memoText{position:absolute;left:33.5%;top:37%;width:36%;height:32%;transform:rotate(-2deg);display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Nanum Pen Script',cursive;font-size:clamp(15px,4.6vw,22px);line-height:1.12;transition:opacity .18s;color:#23232b;font-weight:700;letter-spacing:-.5px;text-shadow:0 0 .5px #23232b;white-space:pre-line;overflow:hidden}
+
+/* 도어락 */
+#lock{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+#lock.on{display:flex}
+.pad{width:210px;background:linear-gradient(#26272b,#141417);border-radius:16px;padding:18px 16px 14px;box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)}
+.pad .scr{height:30px;display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:12px}
+.pad .scr i{width:9px;height:9px;border-radius:50%;background:#333}
+.pad .scr i.on{background:#7fd6ff;box-shadow:0 0 8px #7fd6ff}
+.pad .scr.err i{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}
+.pad .scr.ok i{background:#7dffa6;box-shadow:0 0 8px #7dffa6}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.keys button{height:44px;border-radius:50%;font-size:19px;color:#cfefff;text-shadow:0 0 8px rgba(120,210,255,.8);background:rgba(255,255,255,.03)}
+.keys button:active{background:rgba(120,210,255,.2)}
+.pad .h{font-size:12px;color:var(--dim);text-align:center;margin-top:12px;min-height:16px}
+.pad .x{display:block;margin:8px auto 0;font-size:12px;color:#777}
+
+/* 타이틀·엔딩 */
+.full{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px}
+.full.on{display:flex}
+#title{background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.75)),url(img/corridor.jpg) 45% center/cover}
+#title .date,#final .date{letter-spacing:.45em;font-size:13px;color:var(--accent);margin-bottom:26px}
+#title h1{font-family:'Gowun Batang',serif;font-size:31px;margin:0 0 10px;line-height:1.4;text-shadow:0 2px 14px #000}
+#title .sub{color:#d6cfc3;font-size:14px;margin-bottom:54px;text-shadow:0 1px 6px #000}
+.btn{border:1px solid rgba(255,255,255,.45);padding:12px 28px;border-radius:999px;font-size:15px;background:rgba(0,0,0,.25);color:var(--ink);text-decoration:none;display:inline-block}
+#title .foot{position:absolute;bottom:26px;left:0;right:0;font-size:12px;color:#aaa}
+#ending{background:#08080a;cursor:pointer;overflow:hidden}
+#ending::before{content:'';position:absolute;inset:0;background:url(img/entry.jpg) 50% center/cover;filter:brightness(1.25) saturate(1.1) sepia(.15);opacity:0;transition:opacity 2.2s}
+#ending::after{content:'';position:absolute;inset:0;background:rgba(8,8,10,.62);opacity:0;transition:opacity 2.2s}
+#ending.lit::before{opacity:1}
+#ending.lit::after{opacity:1}
+#ending>*{position:relative;z-index:1}
+#endLines{font-family:'Gowun Batang',serif;font-size:16px;line-height:2;min-height:260px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;justify-content:center}
+#endLines .n{color:#cfc7ba;font-size:14.5px}
+#endLines .q{color:#fff}
+#endLines div{opacity:0;transition:opacity .9s}
+#endLines div.on{opacity:1}
+#endLines .sfx{color:var(--dim);font-size:14px;letter-spacing:.15em}
+#ending .tap{position:absolute!important;bottom:26px;left:0;right:0;font-size:12px;color:#777}
+#final{background:linear-gradient(rgba(0,0,0,.72),rgba(0,0,0,.88)),url(img/door.jpg) center/cover}
+#final h2{font-family:'Gowun Batang',serif;font-size:27px;margin:0 0 18px}
+#final p{font-family:'Gowun Batang',serif;color:#d8d0c3;line-height:1.95;font-size:15px;margin:0 0 30px}
+#final .note{font-size:12px;color:var(--dim);margin-top:26px;line-height:1.7}
+#final .again{margin-top:14px;font-size:12px;color:#888;text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="viewer">
+    <div id="stage"><div id="scene"><img id="photo" alt=""><div id="spots"></div></div></div>
+    <div id="veil"></div>
+  </div>
+  <div id="top"><div id="place"></div><div id="topR"><div id="count"></div><button id="snd" aria-label="소리"></button></div></div>
+  <audio id="amb" src="audio/ambience.mp3" loop preload="auto"></audio>
+  <audio id="mus" src="audio/laptop.mp3" loop preload="auto"></audio>
+  <div id="hint">화면을 좌우로 끌어서 둘러보세요</div>
+  <div id="bottom"></div>
+
+  <div id="shade"></div>
+  <div id="sheet">
+    <div id="shot"></div>
+    <h3 id="sTitle"></h3>
+    <p id="sText"></p>
+    <div class="row"><button class="close" id="sClose">닫기</button><button class="next" id="sNext"></button></div>
+  </div>
+
+  <div id="lock"><div class="pad">
+    <div class="scr" id="scr"><i></i><i></i><i></i><i></i></div>
+    <div class="keys" id="keys"></div>
+    <div class="h" id="lockHint">비밀번호 네 자리</div>
+    <button class="x" id="lockClose">닫기</button>
+  </div></div>
+
+  <section id="title" class="full on">
+    <div class="date">12 · 17</div>
+    <h1>의정부,<br>2층 끝 집</h1>
+    <div class="sub">붓다 섯다 · 다시 열리는 날</div>
+    <button class="btn" id="startBtn">들어가 보기</button>
+    <div class="foot">망통</div>
+  </section>
+
+  <section id="ending" class="full">
+    <div id="endLines"></div>
+    <div class="tap">화면을 누르세요</div>
+  </section>
+
+  <section id="final" class="full">
+    <div class="date">12 · 17</div>
+    <h2>붓다 섯다</h2>
+    <p>두 사람이 다시 만난 날,<br>이야기를 다시 엽니다.<br>처음부터 끝까지, 무료로.</p>
+    <a class="btn" id="readLink" href="#" target="_blank" rel="noopener">포스타입에서 읽기</a>
+    <div class="note">본편에는 성인 독자를 위한 내용이 포함되어 있어요.</div>
+    <button class="again" id="again">처음부터 다시 둘러보기</button>
+  </section>
+</div>
+
+<script>
+/* ================= 데이터 =================
+   좌표(x, y)는 사진 안의 위치 비율(0~1)  */
+const MEMO_TEXT = '냉장고 안에\n메론 깎아놨어';
+
+const NODES = {
+  corridor:{ name:'2층 복도', img:'corridor', start:.45,
+    links:[{to:'door', label:'끝 집으로', x:.46, y:.47}], objs:[] },
+  door:{ name:'복도 끝 집', img:'door', start:.45, links:[], objs:[], lock:{x:.40, y:.48} },
+  entry:{ name:'현관', img:'entry', start:.5,
+    links:[
+      {to:'living',  label:'거실', x:.52, y:.62},
+      {to:'kitchen', label:'부엌', x:.43, y:.36},
+      {to:'storage', label:'왼쪽 방', x:.27, y:.50},
+      {to:'bath',    label:'오른쪽 문', x:.70, y:.42}],
+    objs:[
+      {id:'boots', x:.535, y:.845, t:'작업화',
+       p:'엄성현의 작업화.\n두 켤레를 번갈아 신는다.\n오늘은 검은색을 신고 나갔다.\n\n매일 털어도 매일 허얘진다고\n요새는 잘 닦지도 않는다.'},
+      {id:'sneakers', x:.69, y:.855, t:'운동화',
+       p:'안건호의 운동화.\n뒤꿈치를 꺾어 신는 버릇이 여전하다.'}]},
+  living:{ name:'거실', img:'living', start:.5,
+    links:[
+      {to:'balcony', label:'베란다', x:.56, y:.43},
+      {to:'bedroom', label:'안방', x:.04, y:.40},
+      {to:'kitchen', label:'부엌', x:.96, y:.40}],
+    back:'entry',
+    objs:[
+      {id:'snack', x:.10, y:.61, t:'과자 봉지',
+       p:'소파 팔걸이 옆에 사또밥 봉지.\n며칠 전에 먹다 남긴 입구를\n성현이 빨래집게로 물려 놨다.'},
+      {id:'tang', x:.46, y:.61, t:'귤',
+       p:'까먹고서 껍질 그대로 둔 사람 안건호.'},
+      {id:'earphone', x:.835, y:.545, t:'이어폰',
+       p:'줄이 귤 모양 줄감개에 감겨 있다.\n\n삭은 탓에 새것으로 사준다고 했지만\n건호에게 매번 거절당했다.'},
+      {id:'laptop', x:.855, y:.485, t:'노트북',
+       p:'건호가 켜 놓은 노래가 흘러나오고 있다.'},
+      {id:'dict', x:.88, y:.595, t:'불어 사전',
+       p:'두꺼운 불어 사전.\n사이에 연습장 한 장이 끼워져 있다.\n\nIl se rencontre un jour.\n\n성현이 무슨 뜻이냐고 묻자\n건호는 웃기만 했다.'},
+      {id:'plant', x:.925, y:.59, t:'화분',
+       p:'성현이 어느 날 갑자기 들고 온 화분.\n\n뭐냐고 묻자\n김 반장님이 집에 초록색이 있어야 한다고 했단다.'},
+      {id:'cushion', x:.46, y:.86, t:'방석',
+       p:'절에서 생활한 탓에\n바닥에 아무렇게나 주저앉는 건호 때문에\n성현이 사 온 방석.'},
+      {id:'stove', x:.10, y:.86, t:'전기난로',
+       p:'구식 전기난로.\n보일러를 켜도 추울 때면 한 번씩 사용한다.\n근처 철물점에서 사 왔다.'}]},
+  kitchen:{ name:'부엌', img:'kitchen', start:.4,
+    links:[{to:'living', label:'거실', x:.92, y:.45}], back:'entry',
+    objs:[
+      {id:'memo', x:.14, y:.26, t:'냉장고 메모', memo:true,
+       p:'자석 하나에 중요한 고지서와\n성현이 쓴 메모가 여러 장 겹쳐 있다.\n맨 윗장만 읽을 수 있다.\n\n냉장고 속 메론은\n성현이 어제 퇴근길에 사 왔다.'},
+      {id:'pot', x:.68, y:.39, t:'냄비',
+       p:'성현이 며칠 전에 끓인 김치찌개.\n맵지 않고 맛있다.'},
+      {id:'corner', x:.45, y:.80, t:'식탁 모서리',
+       p:'모서리마다 보호대가 붙어 있다.\n아이가 있는 집에서\n성현이 중고로 싸게 사 왔다고 했다.\n\n건호는 식탁에 앉을 때마다\n보호대를 괜히 만져 본다.\n한 번씩 부딪히는 성현 때문에\n보호대가 있어서 다행이라고 생각하면서.'}]},
+  bedroom:{ name:'안방', img:'bedroom', start:.42, links:[], back:'living',
+    objs:[
+      {id:'drawer', x:.33, y:.585, t:'협탁',
+       p:'협탁 서랍이 열려 있다.\n\n…안에는 들춰 보지 말자.'},
+      {id:'perfume', x:.23, y:.545, t:'향수',
+       p:'성현의 생일 때 건호가 선물해 줬던 향수.\n그날 이후로 조금씩 썼는지\n반 정도 줄었다.'},
+      {id:'jacket', x:.145, y:.36, t:'작업 점퍼',
+       p:'성현이 현장 나갈 때 입는 작업 점퍼.\n한겨울에는 추워서 패딩 작업복을 입어\n요즘은 내내 걸려 있다.\n\n건호가 집 근처를 나갈 때 한 번씩 입는다.'}]},
+  storage:{ name:'창고방', img:'storage', start:.45, links:[], back:'entry',
+    objs:[
+      {id:'tools', x:.38, y:.70, t:'공구통',
+       p:'빨간 공구통.\n미장용 흙손이 깨끗하게 닦여 들어가 있다.\n\n흙손 손잡이 안쪽에 네임펜으로 쓴 글씨.\n‘엄성현’\n그 옆에 다른 글씨로 ‘꺼!’'},
+      {id:'box', x:.75, y:.72, t:'이사 박스',
+       p:'자재 사이에 어울리지 않는 이사 박스.\n둘이서 기숙사를 한 번 더 들렀을 때\n가져 나온 짐이다.\n\n전공 서적과 두꺼운 노트가 여러 권.\n대학에 들어간 해부터 매일 쓴 일기다.\n마지막 권은 뒤쪽이 아직 한참 비어 있다.\n\n건호가 보여 주지 않아\n성현도 아직 읽어 보지는 못했다.'}]},
+  bath:{ name:'욕실', img:'bath', start:.4, links:[], back:'entry',
+    objs:[
+      {id:'tooth', x:.25, y:.43, t:'칫솔',
+       p:'파란색 엄성현.\n초록색 안건호.'},
+      {id:'paste', x:.275, y:.515, t:'치약',
+       p:'맨날 가운데 눌러서 짜는 사람 안건호.\n그래도 성현은 별말 안 한다.'},
+      {id:'tub', x:.62, y:.57, t:'욕조',
+       p:'욕조는 거의 쓰지 않는다.\n얼마 전, 단수됐을 때\n물 받아 놓는다고 딱 한 번 썼었다.'}]},
+  balcony:{ name:'베란다', img:'balcony', start:.62, links:[], back:'living',
+    objs:[
+      {id:'laundry', x:.66, y:.52, t:'빨래 건조대',
+       p:'성현의 작업복 바지 옆에\n건호의 회색 후드티.'},
+      {id:'slipper', x:.84, y:.85, t:'슬리퍼',
+       p:'여전히 하나뿐이다.'},
+      {id:'boiler', x:.78, y:.25, t:'보일러',
+       p:'배관이 얼어 드라이기로 녹였던 다음 날,\n성현이 배관 보온재를 새로 감았다.\n\n이후로는 아직 얼지 않았다.'}]}
+};
+const BACK_LABEL = {entry:'현관', living:'거실'};
+const ALL = Object.values(NODES).flatMap(n=>n.objs.map(o=>o.id));
+
+/* ================= 상태 ================= */
+const $=s=>document.querySelector(s);
+let cur=null, panX=0, imgW=0, vw=0, vh=0, busy=false, unlocked=false;
+const found=new Set();
+
+
+/* 이미지 미리 불러오기 */
+const imgs={};
+['corridor','door','entry','living','kitchen','bedroom','storage','bath','balcony','memo'].forEach(k=>{const i=new Image();i.src='img/'+k+'.jpg';imgs[k]=i;});
+
+/* ================= 소리 ================= */
+let ac=null;
+function beep(f=1800,d=.07,t=0,v=.08){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(),g=ac.createGain(); o.type='sine';o.frequency.value=f;
+  g.gain.setValueAtTime(v,ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+t+d);
+  o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+d+.02);}catch(e){} }
+const melody=()=>[1568,1976,2349,3136].forEach((f,i)=>beep(f,.12,i*.11,.07));
+
+/* ================= 화면 배치 ================= */
+function layout(){
+  const v=$('#viewer'); vw=v.clientWidth; vh=v.clientHeight;
+  const im=$('#photo'); const r=(im.naturalWidth||1536)/(im.naturalHeight||1024);
+  imgW=vh*r; $('#stage').style.width=imgW+'px'; clampPan(); applyPan();
+}
+function clampPan(){ const min=Math.min(0,vw-imgW); panX=Math.max(min,Math.min(0,panX)); }
+function applyPan(){ $('#stage').style.transform=`translateX(${panX}px)`; }
+addEventListener('resize',layout);
+
+/* 드래그 */
+(function(){
+  const v=$('#viewer'); let sx=0,sp=0,down=false,moved=false,vel=0,lx=0,lt=0,raf=0;
+  v.addEventListener('pointerdown',e=>{ if(busy) return; down=true;moved=false;sx=e.clientX;sp=panX;lx=e.clientX;lt=performance.now();vel=0;cancelAnimationFrame(raf); });
+  addEventListener('pointermove',e=>{ if(!down) return; const dx=e.clientX-sx; if(Math.abs(dx)>6) moved=true;
+    panX=sp+dx; clampPan(); applyPan(); const t=performance.now(); vel=(e.clientX-lx)/Math.max(1,t-lt); lx=e.clientX; lt=t;
+    if(moved) $('#hint').style.opacity=0; });
+  addEventListener('pointerup',()=>{ if(!down) return; down=false;
+    (function glide(){ vel*=.93; if(Math.abs(vel)<.02) return; panX+=vel*16; clampPan(); applyPan(); raf=requestAnimationFrame(glide); })(); });
+  v.addEventListener('click',e=>{ if(moved){e.stopPropagation();e.preventDefault();} },true);
+})();
+
+/* ================= 장면 ================= */
+function arrowSvg(){return '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';}
+function render(){
+  const n=NODES[cur]; const sp=$('#spots'); sp.innerHTML='';
+  n.objs.forEach(o=>{ const d=document.createElement('button'); d.className='hot'+(found.has(o.id)?' found':'');
+    d.style.left=o.x*100+'%'; d.style.top=o.y*100+'%'; d.onclick=()=>openObj(o); sp.appendChild(d); });
+  n.links.forEach(l=>{ if(l.to==='door' && false) return;
+    const d=document.createElement('button'); d.className='go'; d.style.left=l.x*100+'%'; d.style.top=l.y*100+'%';
+    d.innerHTML=arrowSvg()+'<span>'+l.label+'</span>'; d.onclick=()=>walk(l); sp.appendChild(d); });
+  if(n.lock){ const d=document.createElement('button'); d.className='go'; d.style.left=n.lock.x*100+'%'; d.style.top=n.lock.y*100+'%';
+    d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="10" cy="8" r=".8" fill="#fff"/><circle cx="14" cy="8" r=".8" fill="#fff"/><circle cx="10" cy="12" r=".8" fill="#fff"/><circle cx="14" cy="12" r=".8" fill="#fff"/></svg><span>도어락</span>';
+    d.onclick=openLock; sp.appendChild(d); }
+  $('#place').textContent=n.name;
+  updateCount(); renderBottom();
+}
+function left(id){ return NODES[id].objs.filter(o=>!found.has(o.id)).length; }
+function updateCount(){ $('#count').textContent = unlocked ? `찾은 물건 ${found.size} / ${ALL.length}` : ''; }
+function renderBottom(){
+  const n=NODES[cur], b=$('#bottom'); b.innerHTML='';
+  const add=(label,fn,extra='')=>{const c=document.createElement('button');c.className='chip';c.innerHTML=label+extra;c.onclick=fn;b.appendChild(c);};
+  if(n.back) add('← '+BACK_LABEL[n.back], ()=>go(n.back,null));
+  n.links.forEach(l=>{ const k=left(l.to); add(l.label, ()=>walk(l), (unlocked&&k)?'<small>'+k+'</small>':''); });
+}
+function show(id,startFrac){
+  cur=id; const n=NODES[id]; const im=$('#photo'); ambRoom(id,1.6); musRoom(id,1.6);
+  return new Promise(res=>{ im.onload=()=>{ layout(); const s=startFrac!=null?startFrac:n.start; panX=-(imgW*s-vw/2); clampPan(); applyPan(); render(); res(); };
+    im.src='img/'+n.img+'.jpg'; if(im.complete && im.naturalWidth) im.onload(); });
+}
+/* 걸어가기: 목표 지점을 화면 가운데로 돌리고 다가가며 어두워짐 */
+async function walk(l){
+  if(busy) return; busy=true;
+  const target=-(imgW*l.x-vw/2); const from=panX; const t0=performance.now();
+  await new Promise(r=>{ (function f(t){ let k=Math.min(1,(t-t0)/380); k=1-Math.pow(1-k,3); panX=from+(target-from)*k; clampPan(); applyPan(); k<1?requestAnimationFrame(f):r(); })(t0); });
+  const sc=$('#scene'); const ox=(l.x*imgW)+'px', oy=(l.y*100)+'%';
+  sc.style.transformOrigin=`${ox} ${oy}`; sc.style.transition='transform .75s cubic-bezier(.5,0,.8,.4), filter .75s';
+  sc.style.transform='scale(2.4)'; sc.style.filter='blur(3px)';
+  setTimeout(()=>$('#veil').classList.add('on'),300);
+  await wait(760);
+  sc.style.transition='none'; sc.style.transform='scale(1.12)'; sc.style.filter='blur(2px)'; sc.style.transformOrigin='50% 50%';
+  await show(l.to);
+  await wait(40);
+  sc.style.transition='transform .8s cubic-bezier(.2,.6,.3,1), filter .8s'; sc.style.transform='scale(1)'; sc.style.filter='none';
+  $('#veil').classList.remove('on');
+  await wait(800); busy=false;
+}
+async function go(id){
+  if(busy) return; busy=true; $('#veil').classList.add('on'); await wait(450);
+  await show(id); $('#veil').classList.remove('on'); await wait(450); busy=false;
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ================= 물건 카드 ================= */
+function openObj(o){
+  if(busy) return;
+  found.add(o.id); render();
+  const shot=$('#shot'); shot.innerHTML='';
+  if(o.memo){
+    shot.style.backgroundImage='url(img/memo.jpg)'; shot.style.backgroundSize='180% 180%'; shot.style.backgroundPosition='53.4% 43.3%';
+    const m=document.createElement('div'); m.className='memoText'; m.textContent=MEMO_TEXT; shot.appendChild(m);
+    $('#sNext').style.display='none';
+  } else {
+    const n=NODES[cur]; const Z=3.2;
+    shot.style.backgroundImage=`url(img/${n.img}.jpg)`;
+    shot.style.backgroundSize=`${Z*150}% ${Z*100}%`;
+    const px=Math.max(0,Math.min(1,(o.x*Z*1.5-.5)/(Z*1.5-1))), py=Math.max(0,Math.min(1,(o.y*Z-.5)/(Z-1)));
+    shot.style.backgroundPosition=`${px*100}% ${py*100}%`;
+    $('#sNext').style.display='none';
+  }
+  $('#sTitle').textContent=o.t; $('#sText').textContent=o.p;
+  $('#sheet').classList.add('on'); $('#shade').classList.add('on');
+}
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#shade').classList.remove('on');
+  if(found.size===ALL.length) setTimeout(startEnding,900); }
+$('#sClose').onclick=closeSheet; $('#shade').onclick=closeSheet;
+
+/* ================= 도어락 ================= */
+let code='', fails=0;
+['1','2','3','4','5','6','7','8','9','*','0','#'].forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>press(k);$('#keys').appendChild(b);});
+function dots(state){ const s=$('#scr'); s.className='scr'+(state?' '+state:''); [...s.children].forEach((d,i)=>d.classList.toggle('on',i<code.length)); }
+function openLock(){ code=''; dots(); $('#lockHint').textContent=fails>=3?'힌트: 안건호 오신 날':'비밀번호 네 자리'; $('#lock').classList.add('on'); }
+$('#lockClose').onclick=()=>$('#lock').classList.remove('on');
+function press(k){
+  beep(1900,.05);
+  if(k==='*'){code='';dots();return;}
+  if(k==='#'||code.length>=4) return;
+  code+=k; dots();
+  if(code.length===4) setTimeout(()=>{
+    if(code==='0214'){ dots('ok'); melody(); musInit(); setTimeout(()=>{ clunk(); },520); setTimeout(()=>{ $('#lock').classList.remove('on'); unlocked=true; walk({to:'entry',x:.5,y:.5}); },900); }
+    else { fails++; dots('err'); beep(420,.25,0,.09); beep(420,.25,.3,.09);
+      $('#lockHint').textContent=fails>=3?'힌트: 안건호 오신 날':'비밀번호가 틀렸습니다'; setTimeout(()=>{code='';dots();},800); }
+  },200);
+}
+
+
+/* ================= 배경음 =================
+   복도에서는 또렷하게, 집 안에서는 벽 너머처럼 먹먹하게 */
+const amb=$('#amb'); let actx=null, lp=null, gn=null, muted=false, ambOn=false;
+const OUTSIDE={corridor:1,door:1};
+function ambInit(){
+  if(ambOn) return; ambOn=true;
+  try{
+    actx=ac||new (window.AudioContext||window.webkitAudioContext)(); ac=actx;
+    const src=actx.createMediaElementSource(amb);
+    lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=16000; lp.Q.value=.5;
+    gn=actx.createGain(); gn.gain.value=0;
+    src.connect(lp); lp.connect(gn); gn.connect(actx.destination);
+    if(actx.state==='suspended') actx.resume();
+  }catch(e){ actx=null; amb.volume=.6; }
+  amb.play().catch(()=>{});
+  ambRoom(cur||'corridor', 2.5);
+}
+function ambSet(g, f, sec=1.2){
+  if(actx&&gn){ const t=actx.currentTime;
+    gn.gain.cancelScheduledValues(t); gn.gain.setValueAtTime(gn.gain.value,t); gn.gain.linearRampToValueAtTime(muted?0:g,t+sec);
+    lp.frequency.cancelScheduledValues(t); lp.frequency.setValueAtTime(lp.frequency.value,t); lp.frequency.exponentialRampToValueAtTime(f,t+sec);
+  } else { amb.volume=muted?0:Math.min(1,g); }
+}
+function ambRoom(id,sec){ if(!ambOn) return; OUTSIDE[id] ? ambSet(.85,16000,sec) : ambSet(.55,750,sec); }
+function sndIcon(){ $('#snd').innerHTML = muted
+  ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'
+  : '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12"/></svg>'; }
+sndIcon();
+$('#snd').onclick=()=>{ muted=!muted; sndIcon(); if(!ambOn){ambInit();return;} if(!muted){ amb.play().catch(()=>{}); if(musOn) mus.play().catch(()=>{}); } ambRoom(cur,.4); musRoom(cur,.4); };
+document.addEventListener('visibilitychange',()=>{ if(!ambOn) return; if(document.hidden){amb.pause();mus.pause();} else if(!muted){amb.play().catch(()=>{}); if(musOn) mus.play().catch(()=>{});} });
+
+
+/* 노트북 노래: 거실에서 가장 크게, 멀어질수록 작고 먹먹하게 */
+const mus=$('#mus'); let mlp=null, mgn=null, musOn=false;
+const MUS_ROOM={ living:[1,12000], kitchen:[.55,2200], entry:[.5,1800], balcony:[.4,1300], bedroom:[.32,900], storage:[.25,750], bath:[.22,700] };
+function musInit(){
+  if(musOn) return; musOn=true;
+  try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const src=ac.createMediaElementSource(mus);
+    mlp=ac.createBiquadFilter(); mlp.type='lowpass'; mlp.frequency.value=1800;
+    mgn=ac.createGain(); mgn.gain.value=0;
+    src.connect(mlp); mlp.connect(mgn); mgn.connect(ac.destination);
+  }catch(e){ mgn=null; mus.volume=.3; }
+  mus.play().catch(()=>{});
+}
+function musSet(g,f,sec=1.4){
+  if(!musOn) return;
+  if(mgn&&ac){ const t=ac.currentTime;
+    mgn.gain.cancelScheduledValues(t); mgn.gain.setValueAtTime(mgn.gain.value,t); mgn.gain.linearRampToValueAtTime(muted?0:g*.9,t+sec);
+    mlp.frequency.cancelScheduledValues(t); mlp.frequency.setValueAtTime(mlp.frequency.value,t); mlp.frequency.exponentialRampToValueAtTime(f,t+sec);
+  } else mus.volume=muted?0:Math.min(1,g*.6);
+}
+function musRoom(id,sec){ const r=MUS_ROOM[id]; r?musSet(r[0],r[1],sec):musSet(0,600,sec); }
+
+/* ================= 타이틀·엔딩 ================= */
+$('#startBtn').onclick=async()=>{ beep(1,.001,0,.0001); ambInit(); $('#title').classList.remove('on'); await show('corridor'); $('#hint').style.opacity=1; };
+const END=[
+  ['sfx','삑, 삑, 삑, 삑.','beeps'],
+  ['sfx','띠리릭.','melody'],
+  ['sfx','철커덩.','clunk'],
+  ['q','“건호야.”'],
+  ['n','성현의 목소리.'],
+  ['n','평소보다 일찍 돌아왔다.'],
+  ['q','“밖에 춥지?”'],
+  ['q','“완전. 보일러 안 켰어?”'],
+  ['q','“방금 껐어.”'],
+  ['n','현관 불이 켜진다.','light'],
+  ['q','“삼겹살 먹을까?”'],
+  ['n','물음에 건호가 웃는다.'],
+  ['q','“일단 좀, 들어와 봐…”'],
+  ['n','손을 잡아끌자 성현도 웃는다.']
+];
+let ei=0;
+function clunk(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const t=ac.currentTime, len=ac.sampleRate*.35, buf=ac.createBuffer(1,len,ac.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,6);
+  const n=ac.createBufferSource(); n.buffer=buf; const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1400; bp.Q.value=2.5;
+  const g=ac.createGain(); g.gain.value=.5; n.connect(bp); bp.connect(g); g.connect(ac.destination); n.start(t);
+  const o=ac.createOscillator(), og=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(120,t); o.frequency.exponentialRampToValueAtTime(45,t+.25);
+  og.gain.setValueAtTime(.45,t); og.gain.exponentialRampToValueAtTime(.001,t+.3); o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t+.32);
+  const n2=ac.createBufferSource(); n2.buffer=buf; const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=3000; const g2=ac.createGain(); g2.gain.value=.25;
+  n2.connect(hp); hp.connect(g2); g2.connect(ac.destination); n2.start(t+.12);
+}catch(e){} }
+function startEnding(){ ambSet(.18,600,2); musSet(.3,1400,2); const E=$('#ending'); E.classList.remove('lit'); E.classList.add('on'); ei=0; const L=$('#endLines'); L.innerHTML='';
+  END.forEach(([c,t])=>{const d=document.createElement('div');d.className=c;d.textContent=t;L.appendChild(d);}); endNext(); }
+function endNext(){ const ds=$('#endLines').children;
+  if(ei<ds.length){ const fx=END[ei][2];
+    if(fx==='beeps') [1900,1900,1900,1900].forEach((f,i)=>beep(f,.05,i*.18));
+    if(fx==='melody') melody();
+    if(fx==='clunk') clunk();
+    if(fx==='light') $('#ending').classList.add('lit');
+    ds[ei].classList.add('on'); ds[ei].scrollIntoView({block:'nearest'}); ei++; }
+  else { ambSet(.3,1200,2.5); $('#ending').classList.remove('on'); $('#final').classList.add('on'); } }
+$('#ending').onclick=endNext;
+$('#again').onclick=()=>{ ambRoom('corridor',1.5); musSet(0,600,1.5); found.clear(); unlocked=false; fails=0; $('#final').classList.remove('on'); $('#title').classList.add('on'); };
+</script>
+</body>
+</html>
