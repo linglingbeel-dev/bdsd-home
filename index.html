@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>의정부, 2층 끝 집 — 붓다 섯다</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&family=Nanum+Brush+Script&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#efe8dc;--dim:#a39c90;--accent:#f0cf95;--card:rgba(22,23,27,.94)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -54,7 +54,7 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 #sheet .row{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
 #sheet .close{font-size:13px;color:var(--dim);padding:6px 0}
 #sheet .next{font-size:13px;color:var(--accent);padding:6px 0}
-.memoText{position:absolute;left:33.5%;top:37%;width:36%;height:32%;transform:rotate(-2deg);display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Nanum Pen Script',cursive;font-size:clamp(15px,4.6vw,22px);line-height:1.12;transition:opacity .18s;color:#23232b;font-weight:700;letter-spacing:-.5px;text-shadow:0 0 .5px #23232b;white-space:pre-line;overflow:hidden}
+.memoText{position:absolute;left:33.5%;top:37%;width:36%;height:32%;transform:rotate(-2deg);display:flex;align-items:center;justify-content:center;text-align:center;font-family:'Nanum Brush Script',cursive;font-size:clamp(18px,5.6vw,26px);line-height:1.15;color:#5a5866;opacity:.88;white-space:pre-line;overflow:hidden}
 
 /* 도어락 */
 #lock{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
@@ -89,6 +89,7 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 #endLines{font-family:'Gowun Batang',serif;font-size:16px;line-height:2;min-height:260px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;justify-content:center}
 #endLines .n{color:#cfc7ba;font-size:14.5px}
 #endLines .q{color:#fff}
+#endLines .big{color:#fff;font-weight:700;font-size:21px;margin-top:22px}
 #endLines div{opacity:0;transition:opacity .9s}
 #endLines div.on{opacity:1}
 #endLines .sfx{color:var(--dim);font-size:14px;letter-spacing:.15em}
@@ -144,7 +145,7 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
     <div class="date">12 · 17</div>
     <h2>붓다 섯다</h2>
     <p>두 사람이 다시 만난 날,<br>이야기를 다시 엽니다.<br>처음부터 끝까지, 무료로.</p>
-    <a class="btn" id="readLink" href="#" target="_blank" rel="noopener">포스타입에서 읽기</a>
+    <a class="btn" id="readLink" href="https://posty.pe/pehre1zc" target="_blank" rel="noopener">포스타입에서 읽기</a>
     <div class="note">본편에는 성인 독자를 위한 내용이 포함되어 있어요.</div>
     <button class="again" id="again">처음부터 다시 둘러보기</button>
   </section>
@@ -435,12 +436,16 @@ const END=[
   ['n','평소보다 일찍 돌아왔다.'],
   ['q','“밖에 춥지?”'],
   ['q','“완전. 보일러 안 켰어?”'],
-  ['q','“방금 껐어.”'],
+  ['n','현관으로 뛰어오는 건호.'],
+  ['q','“아까까지 켜 놨다가 방금 껐어.”'],
   ['n','현관 불이 켜진다.','light'],
-  ['q','“삼겹살 먹을까?”'],
+  ['break'],
+  ['q','“저녁에 삼겹살 먹을까?”'],
   ['n','물음에 건호가 웃는다.'],
   ['q','“일단 좀, 들어와 봐…”'],
-  ['n','손을 잡아끌자 성현도 웃는다.']
+  ['n','손을 잡아끌자 성현도 웃는다.'],
+  ['n','건호의 손을 맞잡으며 말한다.'],
+  ['big','“다녀왔어.”']
 ];
 let ei=0;
 function clunk(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
@@ -453,16 +458,25 @@ function clunk(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContex
   const n2=ac.createBufferSource(); n2.buffer=buf; const hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=3000; const g2=ac.createGain(); g2.gain.value=.25;
   n2.connect(hp); hp.connect(g2); g2.connect(ac.destination); n2.start(t+.12);
 }catch(e){} }
-function startEnding(){ ambSet(.18,600,2); musSet(.3,1400,2); const E=$('#ending'); E.classList.remove('lit'); E.classList.add('on'); ei=0; const L=$('#endLines'); L.innerHTML='';
-  END.forEach(([c,t])=>{const d=document.createElement('div');d.className=c;d.textContent=t;L.appendChild(d);}); endNext(); }
-function endNext(){ const ds=$('#endLines').children;
-  if(ei<ds.length){ const fx=END[ei][2];
+let page=[];
+function buildPage(){ const L=$('#endLines'); L.innerHTML=''; page=[];
+  while(ei<END.length && END[ei][0]!=='break'){ const [c,t,fx]=END[ei]; const d=document.createElement('div'); d.className=c; d.textContent=t; L.appendChild(d); page.push({d,fx}); ei++; }
+  if(ei<END.length && END[ei][0]==='break') ei++;
+}
+let pi=0, fading=false;
+function startEnding(){ ambSet(.12,550,2); musSet(.3,1400,2); const E=$('#ending'); E.classList.remove('lit'); E.classList.add('on'); ei=0; pi=0; buildPage(); endNext(); }
+function endNext(){
+  if(fading) return;
+  if(pi<page.length){ const {d,fx}=page[pi];
     if(fx==='beeps') [1900,1900,1900,1900].forEach((f,i)=>beep(f,.05,i*.18));
     if(fx==='melody') melody();
     if(fx==='clunk') clunk();
     if(fx==='light') $('#ending').classList.add('lit');
-    ds[ei].classList.add('on'); ds[ei].scrollIntoView({block:'nearest'}); ei++; }
-  else { ambSet(.3,1200,2.5); $('#ending').classList.remove('on'); $('#final').classList.add('on'); } }
+    d.classList.add('on'); pi++; return; }
+  if(ei<END.length){ fading=true; [...$('#endLines').children].forEach(x=>x.classList.remove('on'));
+    setTimeout(()=>{ buildPage(); pi=0; fading=false; endNext(); },1000); return; }
+  ambSet(.3,1200,2.5); $('#ending').classList.remove('on'); $('#final').classList.add('on');
+}
 $('#ending').onclick=endNext;
 $('#again').onclick=()=>{ ambRoom('corridor',1.5); musSet(0,600,1.5); found.clear(); unlocked=false; fails=0; $('#final').classList.remove('on'); $('#title').classList.add('on'); };
 </script>
