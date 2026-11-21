@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>의정부, 2층 끝 집 — 붓다 섯다</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#efe8dc;--dim:#a39c90;--accent:#f0cf95;--card:rgba(22,23,27,.94)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:#0b0b0d;color:var(--ink);font-family:'Gowun Dodum',sans-serif;overflow:hidden}
+#app{position:relative;max-width:520px;height:100%;margin:0 auto;overflow:hidden;background:#000}
+button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+
+/* 뷰어 */
+#viewer{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
+#stage{position:absolute;top:0;left:0;height:100%;will-change:transform;transform-origin:0 0}
+#scene{position:absolute;inset:0;transform-origin:50% 50%}
+#scene img{height:100%;display:block;pointer-events:none;-webkit-user-drag:none}
+#veil{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s}
+#veil.on{opacity:1}
+
+.hot{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;cursor:pointer}
+.hot::before{content:'';position:absolute;inset:15px;border-radius:50%;background:rgba(255,235,200,.9);box-shadow:0 0 12px 4px rgba(255,210,150,.55)}
+.hot::after{content:'';position:absolute;inset:6px;border-radius:50%;border:2px solid rgba(255,225,180,.8);animation:ring 2s ease-out infinite}
+.hot.found::before{background:rgba(255,255,255,.35);box-shadow:none;inset:19px}
+.hot.found::after{display:none}
+@keyframes ring{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.4);opacity:0}}
+.go{position:absolute;margin:-26px 0 0 -26px;width:52px;height:52px;border-radius:50%;background:rgba(10,10,12,.45);border:1.5px solid rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.go svg{width:22px;height:22px}
+.go span{position:absolute;top:56px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:12px;background:rgba(10,10,12,.55);padding:3px 9px;border-radius:99px}
+
+/* 상단·하단 */
+#top{position:absolute;top:0;left:0;right:0;padding:16px 18px 30px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(rgba(0,0,0,.55),transparent);pointer-events:none;z-index:5}
+#place{font-family:'Gowun Batang',serif;font-size:17px;text-shadow:0 1px 6px #000}
+#count{font-size:12px;color:#ddd;text-shadow:0 1px 4px #000;padding-top:3px}
+#hint{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:12px;color:#ddd;text-shadow:0 1px 4px #000;pointer-events:none;transition:opacity .6s;z-index:5}
+#bottom{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 22px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;background:linear-gradient(transparent,rgba(0,0,0,.6));z-index:5}
+.chip{font-size:13px;padding:8px 14px;border-radius:99px;background:rgba(20,20,24,.6);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.chip small{color:var(--accent);margin-left:4px}
+
+/* 카드 */
+#sheet{position:absolute;left:0;right:0;bottom:0;z-index:20;background:var(--card);border-radius:18px 18px 0 0;padding:16px 22px 26px;transform:translateY(105%);transition:transform .4s cubic-bezier(.2,.8,.2,1);max-height:82%;overflow:auto}
+#sheet.on{transform:none}
+#shade{position:absolute;inset:0;z-index:19;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .4s}
+#shade.on{opacity:1;pointer-events:auto}
+#shot{width:100%;aspect-ratio:1/1;border-radius:10px;background-color:#111;background-repeat:no-repeat;margin-bottom:16px;position:relative;overflow:hidden}
+#sheet h3{margin:0 0 10px;font-family:'Gowun Batang',serif;font-size:18px;color:var(--accent)}
+#sheet p{margin:0;font-family:'Gowun Batang',serif;font-size:15.5px;line-height:1.9;white-space:pre-line}
+#sheet .row{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+#sheet .close{font-size:13px;color:var(--dim);padding:6px 0}
+#sheet .next{font-size:13px;color:var(--accent);padding:6px 0}
+.memoText{position:absolute;left:33.5%;top:37%;width:36%;height:32%;transform:rotate(-2deg);font-family:'Nanum Pen Script',cursive;font-size:clamp(15px,4.6vw,22px);line-height:1.12;transition:opacity .18s;color:#23232b;font-weight:700;letter-spacing:-.5px;text-shadow:0 0 .5px #23232b;white-space:pre-line;overflow:hidden}
+
+/* 도어락 */
+#lock{position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center}
+#lock.on{display:flex}
+.pad{width:210px;background:linear-gradient(#26272b,#141417);border-radius:16px;padding:18px 16px 14px;box-shadow:0 30px 80px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08)}
+.pad .scr{height:30px;display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:12px}
+.pad .scr i{width:9px;height:9px;border-radius:50%;background:#333}
+.pad .scr i.on{background:#7fd6ff;box-shadow:0 0 8px #7fd6ff}
+.pad .scr.err i{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}
+.pad .scr.ok i{background:#7dffa6;box-shadow:0 0 8px #7dffa6}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.keys button{height:44px;border-radius:50%;font-size:19px;color:#cfefff;text-shadow:0 0 8px rgba(120,210,255,.8);background:rgba(255,255,255,.03)}
+.keys button:active{background:rgba(120,210,255,.2)}
+.pad .h{font-size:12px;color:var(--dim);text-align:center;margin-top:12px;min-height:16px}
+.pad .x{display:block;margin:8px auto 0;font-size:12px;color:#777}
+
+/* 타이틀·엔딩 */
+.full{position:absolute;inset:0;z-index:40;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:36px}
+.full.on{display:flex}
+#title{background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.75)),url(img/corridor.jpg) 45% center/cover}
+#title .date,#final .date{letter-spacing:.45em;font-size:13px;color:var(--accent);margin-bottom:26px}
+#title h1{font-family:'Gowun Batang',serif;font-size:31px;margin:0 0 10px;line-height:1.4;text-shadow:0 2px 14px #000}
+#title .sub{color:#d6cfc3;font-size:14px;margin-bottom:54px;text-shadow:0 1px 6px #000}
+.btn{border:1px solid rgba(255,255,255,.45);padding:12px 28px;border-radius:999px;font-size:15px;background:rgba(0,0,0,.25);color:var(--ink);text-decoration:none;display:inline-block}
+#title .foot{position:absolute;bottom:26px;left:0;right:0;font-size:12px;color:#aaa}
+#ending{background:#08080a;cursor:pointer}
+#endLines{font-family:'Gowun Batang',serif;font-size:17px;line-height:2.2;min-height:260px;display:flex;flex-direction:column;justify-content:center}
+#endLines div{opacity:0;transition:opacity .9s}
+#endLines div.on{opacity:1}
+#endLines .sfx{color:var(--dim);font-size:14px;letter-spacing:.15em}
+#ending .tap{position:absolute;bottom:26px;left:0;right:0;font-size:12px;color:#555}
+#final{background:linear-gradient(rgba(0,0,0,.72),rgba(0,0,0,.88)),url(img/door.jpg) center/cover}
+#final h2{font-family:'Gowun Batang',serif;font-size:27px;margin:0 0 18px}
+#final p{font-family:'Gowun Batang',serif;color:#d8d0c3;line-height:1.95;font-size:15px;margin:0 0 30px}
+#final .note{font-size:12px;color:var(--dim);margin-top:26px;line-height:1.7}
+#final .again{margin-top:14px;font-size:12px;color:#888;text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="viewer">
+    <div id="stage"><div id="scene"><img id="photo" alt=""><div id="spots"></div></div></div>
+    <div id="veil"></div>
+  </div>
+  <div id="top"><div id="place"></div><div id="count"></div></div>
+  <div id="hint">화면을 좌우로 끌어서 둘러보세요</div>
+  <div id="bottom"></div>
+
+  <div id="shade"></div>
+  <div id="sheet">
+    <div id="shot"></div>
+    <h3 id="sTitle"></h3>
+    <p id="sText"></p>
+    <div class="row"><button class="close" id="sClose">닫기</button><button class="next" id="sNext"></button></div>
+  </div>
+
+  <div id="lock"><div class="pad">
+    <div class="scr" id="scr"><i></i><i></i><i></i><i></i></div>
+    <div class="keys" id="keys"></div>
+    <div class="h" id="lockHint">비밀번호 네 자리</div>
+    <button class="x" id="lockClose">닫기</button>
+  </div></div>
+
+  <section id="title" class="full on">
+    <div class="date">12 · 17</div>
+    <h1>의정부,<br>2층 끝 집</h1>
+    <div class="sub">붓다 섯다 · 다시 열리는 날</div>
+    <button class="btn" id="startBtn">들어가 보기</button>
+    <div class="foot">망통</div>
+  </section>
+
+  <section id="ending" class="full">
+    <div id="endLines"></div>
+    <div class="tap">화면을 누르세요</div>
+  </section>
+
+  <section id="final" class="full">
+    <div class="date">12 · 17</div>
+    <h2>붓다 섯다</h2>
+    <p>두 사람이 다시 만난 날,<br>이야기를 다시 엽니다.<br>처음부터 끝까지, 무료로.</p>
+    <a class="btn" id="readLink" href="#" target="_blank" rel="noopener">포스타입에서 읽기</a>
+    <div class="note">본편에는 성인 독자를 위한 내용이 포함되어 있어요.</div>
+    <button class="again" id="again">처음부터 다시 둘러보기</button>
+  </section>
+</div>
+
+<script>
+/* ================= 데이터 =================
+   좌표(x, y)는 사진 안의 위치 비율(0~1)  */
+const MEMOS = [
+  '국 데워 먹어.\n냄비 뜨거우니까\n행주로 잡고.\n여섯 시에 옴.',
+  '보일러 23도.\n내리지 마.\n너 발 차.',
+  '귤 그만 먹어.\n손 노래짐.',
+  '늦으면 먼저 먹어.\n먼저 자지는 말고.'
+];
+
+const NODES = {
+  corridor:{ name:'2층 복도', img:'corridor', start:.45,
+    links:[{to:'door', label:'끝 집으로', x:.46, y:.47}], objs:[] },
+  door:{ name:'복도 끝 집', img:'door', start:.45, links:[], objs:[], lock:{x:.40, y:.48} },
+  entry:{ name:'현관', img:'entry', start:.5,
+    links:[
+      {to:'living',  label:'거실', x:.52, y:.64},
+      {to:'kitchen', label:'부엌', x:.43, y:.36},
+      {to:'storage', label:'왼쪽 방', x:.27, y:.50},
+      {to:'bath',    label:'오른쪽 문', x:.70, y:.42}],
+    objs:[
+      {id:'shoes', x:.55, y:.86, t:'신발 두 켤레',
+       p:'시멘트가 허옇게 말라붙은 작업화 한 켤레.\n뒤꿈치를 꺾어 신은 흰 운동화 한 켤레.\n\n작업화는 매일 털어도 매일 허옇다.'}]},
+  living:{ name:'거실', img:'living', start:.5,
+    links:[
+      {to:'balcony', label:'베란다', x:.56, y:.45},
+      {to:'bedroom', label:'안방', x:.04, y:.40},
+      {to:'kitchen', label:'부엌', x:.96, y:.40}],
+    back:'entry',
+    objs:[
+      {id:'snack', x:.10, y:.61, t:'과자 봉지',
+       p:'소파 팔걸이 옆에 사또밥 봉지.\n입구를 빨래집게로 물려 놨다.\n\n베란다 집게 줄에 빈자리가 하나 있다.'},
+      {id:'tang', x:.46, y:.61, t:'귤 한 소쿠리',
+       p:'테이블 위에 귤 한 소쿠리.\n까 놓은 껍질은 한 사람 몫이다.\n\n손이 노래질 때까지 먹는 사람은\n이 집에 한 명뿐이다.'},
+      {id:'stove', x:.10, y:.86, t:'전기난로',
+       p:'구식 전기난로.\n보일러가 얼어 터진 날 철물점에서 사 온 것이다.\n\n보일러를 고친 뒤에도 치우지 않았다.'},
+      {id:'earphone', x:.835, y:.545, t:'이어폰',
+       p:'노트북 위에 이어폰.\n줄이 귤 모양 줄감개에 감겨 있다.\n칠이 다 벗겨져서\n귤인 줄 알려면 한참 봐야 한다.\n\n새것으로 사 준다는 말은 세 번 거절당했다.'},
+      {id:'dict', x:.88, y:.595, t:'불어 사전',
+       p:'두꺼운 불어 사전.\n사이에 연습장 한 장이 끼워져 있다.\n\n같은 문장이 여러 번 적혀 있다.\nIl se rencontre un jour.\n\n맨 위의 것에만 줄이 그어져 있다.'}]},
+  kitchen:{ name:'부엌', img:'kitchen', start:.4,
+    links:[{to:'living', label:'거실', x:.92, y:.45}], back:'entry',
+    objs:[
+      {id:'memo', x:.14, y:.26, t:'냉장고 메모', memo:true,
+       p:'자석 하나에 메모가 여러 장 겹쳐 있다.\n맨 위 것만 읽힌다.\n\n밑에 깔린 것들도 글씨는 같다.'},
+      {id:'corner', x:.45, y:.80, t:'식탁 모서리',
+       p:'네 귀퉁이 중 한 군데에만\n모서리 보호대가 붙어 있다.\n\n왼쪽.'}]},
+  bedroom:{ name:'안방', img:'bedroom', start:.42, links:[], back:'living',
+    objs:[
+      {id:'perfume', x:.235, y:.545, t:'향수',
+       p:'협탁 위에 향수 한 병.\n한 번 사라졌다가 돌아온 병이다.\n\n거의 줄지 않았다.\n아껴 쓰는 사람의 병이다.'},
+      {id:'bank', x:.33, y:.585, t:'서랍 속 통장',
+       p:'협탁 서랍. 안건호 명의 통장.\n\n매달 14일,\n같은 금액이 서른 번 찍혀 있다.'},
+      {id:'jacket', x:.145, y:.36, t:'작업 점퍼',
+       p:'문 옆 고리에 작업 점퍼.\n나갈 때 제일 먼저 손이 가는 자리다.\n\n오늘은 걸려 있다.\n오늘은 일이 없는 날이다.'}]},
+  storage:{ name:'작은방', img:'storage', start:.45, links:[], back:'entry',
+    objs:[
+      {id:'tools', x:.38, y:.70, t:'공구통',
+       p:'빨간 공구통.\n미장용 흙손이 깨끗하게 닦여 들어 있다.\n\n뚜껑 안쪽에 네임펜으로 쓴 글씨.\n‘엄성현’\n그 옆에 다른 글씨로 ‘꺼’'},
+      {id:'box', x:.75, y:.72, t:'이사 박스',
+       p:'자재 사이에 어울리지 않는 이사 박스 하나.\n기숙사에서 들고 온 짐이다.\n\n같은 공책이 여러 권.\n대학에 들어간 해부터 매일 쓴 일기다.\n마지막 권은 뒤쪽이 한참 비어 있다.\n\n열어 보지는 않는다.'}]},
+  bath:{ name:'욕실', img:'bath', start:.4, links:[], back:'entry',
+    objs:[
+      {id:'tooth', x:.25, y:.43, t:'칫솔 두 개',
+       p:'컵 하나에 칫솔 두 개.\n하나는 솔이 다 벌어졌고, 하나는 아직 새것이다.\n\n만연사에 두고 온 칫솔은\n결국 아무도 가지러 가지 않았다.'}]},
+  balcony:{ name:'베란다', img:'balcony', start:.62, links:[], back:'living',
+    objs:[
+      {id:'boiler', x:.78, y:.25, t:'보일러',
+       p:'옆면에 수리 기사 스티커가 새로 붙어 있다.\n날짜는 둘이 이 집에 처음 들어온 날.\n\n그날 집은 냉골이었다.\n배관 보온재는 그다음 날 누가 새로 감았다.'},
+      {id:'laundry', x:.66, y:.52, t:'빨래 건조대',
+       p:'작업복 바지 옆에 회색 후드티.\n후드티 소매가 작업복 허리에 걸쳐 있다.\n\n바람 탓이다. 아마.'}]}
+};
+const BACK_LABEL = {entry:'현관', living:'거실'};
+const ALL = Object.values(NODES).flatMap(n=>n.objs.map(o=>o.id));
+
+/* ================= 상태 ================= */
+const $=s=>document.querySelector(s);
+let cur=null, panX=0, imgW=0, vw=0, vh=0, busy=false, unlocked=false;
+const found=new Set();
+let memoIdx=0;
+
+/* 이미지 미리 불러오기 */
+const imgs={};
+['corridor','door','entry','living','kitchen','bedroom','storage','bath','balcony','memo'].forEach(k=>{const i=new Image();i.src='img/'+k+'.jpg';imgs[k]=i;});
+
+/* ================= 소리 ================= */
+let ac=null;
+function beep(f=1800,d=.07,t=0,v=.08){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+  const o=ac.createOscillator(),g=ac.createGain(); o.type='sine';o.frequency.value=f;
+  g.gain.setValueAtTime(v,ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+t+d);
+  o.connect(g);g.connect(ac.destination);o.start(ac.currentTime+t);o.stop(ac.currentTime+t+d+.02);}catch(e){} }
+const melody=()=>[1568,1976,2349,3136].forEach((f,i)=>beep(f,.12,i*.11,.07));
+
+/* ================= 화면 배치 ================= */
+function layout(){
+  const v=$('#viewer'); vw=v.clientWidth; vh=v.clientHeight;
+  const im=$('#photo'); const r=(im.naturalWidth||1536)/(im.naturalHeight||1024);
+  imgW=vh*r; $('#stage').style.width=imgW+'px'; clampPan(); applyPan();
+}
+function clampPan(){ const min=Math.min(0,vw-imgW); panX=Math.max(min,Math.min(0,panX)); }
+function applyPan(){ $('#stage').style.transform=`translateX(${panX}px)`; }
+addEventListener('resize',layout);
+
+/* 드래그 */
+(function(){
+  const v=$('#viewer'); let sx=0,sp=0,down=false,moved=false,vel=0,lx=0,lt=0,raf=0;
+  v.addEventListener('pointerdown',e=>{ if(busy) return; down=true;moved=false;sx=e.clientX;sp=panX;lx=e.clientX;lt=performance.now();vel=0;cancelAnimationFrame(raf); });
+  addEventListener('pointermove',e=>{ if(!down) return; const dx=e.clientX-sx; if(Math.abs(dx)>6) moved=true;
+    panX=sp+dx; clampPan(); applyPan(); const t=performance.now(); vel=(e.clientX-lx)/Math.max(1,t-lt); lx=e.clientX; lt=t;
+    if(moved) $('#hint').style.opacity=0; });
+  addEventListener('pointerup',()=>{ if(!down) return; down=false;
+    (function glide(){ vel*=.93; if(Math.abs(vel)<.02) return; panX+=vel*16; clampPan(); applyPan(); raf=requestAnimationFrame(glide); })(); });
+  v.addEventListener('click',e=>{ if(moved){e.stopPropagation();e.preventDefault();} },true);
+})();
+
+/* ================= 장면 ================= */
+function arrowSvg(){return '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';}
+function render(){
+  const n=NODES[cur]; const sp=$('#spots'); sp.innerHTML='';
+  n.objs.forEach(o=>{ const d=document.createElement('button'); d.className='hot'+(found.has(o.id)?' found':'');
+    d.style.left=o.x*100+'%'; d.style.top=o.y*100+'%'; d.onclick=()=>openObj(o); sp.appendChild(d); });
+  n.links.forEach(l=>{ if(l.to==='door' && false) return;
+    const d=document.createElement('button'); d.className='go'; d.style.left=l.x*100+'%'; d.style.top=l.y*100+'%';
+    d.innerHTML=arrowSvg()+'<span>'+l.label+'</span>'; d.onclick=()=>walk(l); sp.appendChild(d); });
+  if(n.lock){ const d=document.createElement('button'); d.className='go'; d.style.left=n.lock.x*100+'%'; d.style.top=n.lock.y*100+'%';
+    d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="10" cy="8" r=".8" fill="#fff"/><circle cx="14" cy="8" r=".8" fill="#fff"/><circle cx="10" cy="12" r=".8" fill="#fff"/><circle cx="14" cy="12" r=".8" fill="#fff"/></svg><span>도어락</span>';
+    d.onclick=openLock; sp.appendChild(d); }
+  $('#place').textContent=n.name;
+  updateCount(); renderBottom();
+}
+function left(id){ return NODES[id].objs.filter(o=>!found.has(o.id)).length; }
+function updateCount(){ $('#count').textContent = unlocked ? `찾은 물건 ${found.size} / ${ALL.length}` : ''; }
+function renderBottom(){
+  const n=NODES[cur], b=$('#bottom'); b.innerHTML='';
+  const add=(label,fn,extra='')=>{const c=document.createElement('button');c.className='chip';c.innerHTML=label+extra;c.onclick=fn;b.appendChild(c);};
+  if(n.back) add('← '+BACK_LABEL[n.back], ()=>go(n.back,null));
+  n.links.forEach(l=>{ const k=left(l.to); add(l.label, ()=>walk(l), (unlocked&&k)?'<small>'+k+'</small>':''); });
+}
+function show(id,startFrac){
+  cur=id; const n=NODES[id]; const im=$('#photo');
+  return new Promise(res=>{ im.onload=()=>{ layout(); const s=startFrac!=null?startFrac:n.start; panX=-(imgW*s-vw/2); clampPan(); applyPan(); render(); res(); };
+    im.src='img/'+n.img+'.jpg'; if(im.complete && im.naturalWidth) im.onload(); });
+}
+/* 걸어가기: 목표 지점을 화면 가운데로 돌리고 다가가며 어두워짐 */
+async function walk(l){
+  if(busy) return; busy=true;
+  const target=-(imgW*l.x-vw/2); const from=panX; const t0=performance.now();
+  await new Promise(r=>{ (function f(t){ let k=Math.min(1,(t-t0)/380); k=1-Math.pow(1-k,3); panX=from+(target-from)*k; clampPan(); applyPan(); k<1?requestAnimationFrame(f):r(); })(t0); });
+  const sc=$('#scene'); const ox=(l.x*imgW)+'px', oy=(l.y*100)+'%';
+  sc.style.transformOrigin=`${ox} ${oy}`; sc.style.transition='transform .75s cubic-bezier(.5,0,.8,.4), filter .75s';
+  sc.style.transform='scale(2.4)'; sc.style.filter='blur(3px)';
+  setTimeout(()=>$('#veil').classList.add('on'),300);
+  await wait(760);
+  sc.style.transition='none'; sc.style.transform='scale(1.12)'; sc.style.filter='blur(2px)'; sc.style.transformOrigin='50% 50%';
+  await show(l.to);
+  await wait(40);
+  sc.style.transition='transform .8s cubic-bezier(.2,.6,.3,1), filter .8s'; sc.style.transform='scale(1)'; sc.style.filter='none';
+  $('#veil').classList.remove('on');
+  await wait(800); busy=false;
+}
+async function go(id){
+  if(busy) return; busy=true; $('#veil').classList.add('on'); await wait(450);
+  await show(id); $('#veil').classList.remove('on'); await wait(450); busy=false;
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ================= 물건 카드 ================= */
+function openObj(o){
+  if(busy) return;
+  found.add(o.id); render();
+  const shot=$('#shot'); shot.innerHTML='';
+  if(o.memo){
+    shot.style.backgroundImage='url(img/memo.jpg)'; shot.style.backgroundSize='180% 180%'; shot.style.backgroundPosition='53.4% 43.3%';
+    const m=document.createElement('div'); m.className='memoText'; m.textContent=MEMOS[memoIdx]; shot.appendChild(m);
+    $('#sNext').textContent='밑에 깔린 메모 보기'; $('#sNext').style.display='';
+  } else {
+    const n=NODES[cur]; const Z=3.2;
+    shot.style.backgroundImage=`url(img/${n.img}.jpg)`;
+    shot.style.backgroundSize=`${Z*150}% ${Z*100}%`;
+    const px=Math.max(0,Math.min(1,(o.x*Z*1.5-.5)/(Z*1.5-1))), py=Math.max(0,Math.min(1,(o.y*Z-.5)/(Z-1)));
+    shot.style.backgroundPosition=`${px*100}% ${py*100}%`;
+    $('#sNext').style.display='none';
+  }
+  $('#sTitle').textContent=o.t; $('#sText').textContent=o.p;
+  $('#sheet').classList.add('on'); $('#shade').classList.add('on');
+}
+$('#sNext').onclick=()=>{ memoIdx=(memoIdx+1)%MEMOS.length; const m=$('.memoText'); if(m){ m.style.opacity=0; setTimeout(()=>{m.textContent=MEMOS[memoIdx];m.style.opacity=1;},180); m.style.transition='opacity .18s'; } };
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#shade').classList.remove('on');
+  if(found.size===ALL.length) setTimeout(startEnding,900); }
+$('#sClose').onclick=closeSheet; $('#shade').onclick=closeSheet;
+
+/* ================= 도어락 ================= */
+let code='', fails=0;
+['1','2','3','4','5','6','7','8','9','*','0','#'].forEach(k=>{const b=document.createElement('button');b.textContent=k;b.onclick=()=>press(k);$('#keys').appendChild(b);});
+function dots(state){ const s=$('#scr'); s.className='scr'+(state?' '+state:''); [...s.children].forEach((d,i)=>d.classList.toggle('on',i<code.length)); }
+function openLock(){ code=''; dots(); $('#lockHint').textContent=fails>=3?'힌트: 안건호 오신 날':'비밀번호 네 자리'; $('#lock').classList.add('on'); }
+$('#lockClose').onclick=()=>$('#lock').classList.remove('on');
+function press(k){
+  beep(1900,.05);
+  if(k==='*'){code='';dots();return;}
+  if(k==='#'||code.length>=4) return;
+  code+=k; dots();
+  if(code.length===4) setTimeout(()=>{
+    if(code==='0214'){ dots('ok'); melody(); setTimeout(()=>{ $('#lock').classList.remove('on'); unlocked=true; walk({to:'entry',x:.5,y:.5}); },650); }
+    else { fails++; dots('err'); beep(420,.25,0,.09); beep(420,.25,.3,.09);
+      $('#lockHint').textContent=fails>=3?'힌트: 안건호 오신 날':'비밀번호가 틀렸습니다'; setTimeout(()=>{code='';dots();},800); }
+  },200);
+}
+
+/* ================= 타이틀·엔딩 ================= */
+$('#startBtn').onclick=async()=>{ beep(1,.001,0,.0001); $('#title').classList.remove('on'); await show('corridor'); $('#hint').style.opacity=1; };
+const END=[['sfx','삑, 삑, 삑, 삑.'],['sfx','띠리릭.'],['','“추워.”'],['','“보일러 틀어놨어.”'],['','“아까 껐잖아.”'],['','“너 오기 전에 다시 틀었지.”'],['sfx','현관 불이 켜진다.']];
+let ei=0;
+function startEnding(){ $('#ending').classList.add('on'); ei=0; const L=$('#endLines'); L.innerHTML='';
+  END.forEach(([c,t])=>{const d=document.createElement('div');d.className=c;d.textContent=t;L.appendChild(d);}); endNext(); }
+function endNext(){ const ds=$('#endLines').children;
+  if(ei<ds.length){ if(ei===0){[1900,1900,1900,1900].forEach((f,i)=>beep(f,.05,i*.18));} if(ei===1) melody(); ds[ei].classList.add('on'); ei++; }
+  else { $('#ending').classList.remove('on'); $('#final').classList.add('on'); } }
+$('#ending').onclick=endNext;
+$('#again').onclick=()=>{ found.clear(); unlocked=false; fails=0; memoIdx=0; $('#final').classList.remove('on'); $('#title').classList.add('on'); };
+</script>
+</body>
+</html>
