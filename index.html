@@ -28,9 +28,10 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 #viewer{position:absolute;inset:0;overflow:hidden;touch-action:pan-y}
 #stage{position:absolute;top:0;left:0;height:100%;will-change:transform;transform-origin:0 0}
 #scene{position:absolute;inset:0;transform-origin:50% 50%}
-#scene img{height:100%;display:block;pointer-events:none;-webkit-user-drag:none}
+#scene img{height:100%;display:block;pointer-events:none;-webkit-user-drag:none;transition:filter 2.5s}
 #veil{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s}
-#dusk{position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(14,20,44,.95),rgba(8,10,24,.95));opacity:0;transition:opacity 2.5s}
+#dusk{position:absolute;inset:0;pointer-events:none;background:#141a36;mix-blend-mode:multiply;opacity:0;transition:opacity 2.5s}
+#dusk2{position:absolute;inset:0;pointer-events:none;background:#000;opacity:0;transition:opacity 2.5s}
 #final .btns{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:22px}
 #final .sub2{font-size:13px;color:#d8d0c3;text-decoration:underline;text-underline-offset:4px}
 .ov{position:absolute;inset:0;z-index:50;background:#0d0d10;display:none;flex-direction:column}
@@ -116,9 +117,9 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 #title .foot{position:absolute;bottom:26px;left:0;right:0;font-size:12px;color:#aaa}
 #ending{background:#08080a;cursor:pointer;overflow:hidden}
-#ending::before{content:'';position:absolute;inset:0;background:url(img/entry.jpg) 50% center/cover;filter:brightness(1.25) saturate(1.1) sepia(.15);opacity:0;transition:opacity 2.2s}
-#ending::after{content:'';position:absolute;inset:0;background:rgba(8,8,10,.62);opacity:0;transition:opacity 2.2s}
-#ending.lit::before{opacity:1}
+#ending::before{content:'';position:absolute;inset:0;background:url(img/entry_night.jpg) 50% center/cover;opacity:0}
+#ending::after{content:'';position:absolute;inset:0;background:rgba(8,8,10,.45);opacity:0;transition:opacity .12s}
+#ending.lit::before{opacity:1;transition:opacity .12s}
 #ending.lit::after{opacity:1}
 #ending>*{position:relative;z-index:1}
 #endLines{font-family:'Gowun Batang',serif;font-size:16px;line-height:2;min-height:260px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;justify-content:center}
@@ -140,7 +141,7 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 <div id="app">
   <div id="viewer">
     <div id="stage"><div id="scene"><img id="photo" alt=""><div id="spots"></div></div></div>
-    <div id="dusk"></div>
+    <div id="dusk"></div><div id="dusk2"></div>
     <div id="veil"></div>
   </div>
   <div id="top"><div id="place"></div><div id="topR"><div id="count"></div><button id="snd" aria-label="소리"></button></div></div>
@@ -187,7 +188,6 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
       <button class="sub2" id="openAlbum">찾은 물건 모아 보기</button>
       <button class="sub2" id="openCard">다녀온 인증 카드 만들기</button>
     </div>
-    <div class="note">본편에는 성인 독자를 위한 내용이 포함되어 있어요.</div>
     <button class="again" id="again">처음부터 다시 둘러보기</button>
   </section>
 
@@ -216,14 +216,14 @@ const NODES = {
   door:{ name:'복도 끝 집', img:'door', start:.45, links:[], objs:[], lock:{x:.40, y:.48} },
   entry:{ name:'현관', img:'entry', start:.5,
     links:[
-      {to:'living',  label:'거실', x:.52, y:.62},
-      {to:'kitchen', label:'부엌', x:.43, y:.36},
-      {to:'storage', label:'왼쪽 방', x:.27, y:.50},
-      {to:'bath',    label:'오른쪽 문', x:.70, y:.42}],
+      {to:'living',  label:'거실', x:.50, y:.56},
+      {to:'kitchen', label:'부엌', x:.70, y:.40},
+      {to:'storage', label:'창고방', x:.27, y:.50},
+      {to:'bath',    label:'욕실', x:.375, y:.40}],
     objs:[
-      {id:'boots', x:.535, y:.845, t:'작업화',
+      {id:'boots', x:.535, y:.875, t:'작업화',
        p:'엄성현의 작업화.\n두 켤레를 번갈아 신는다.\n오늘은 검은색을 신고 나갔다.\n\n매일 털어도 매일 허얘진다고\n요새는 잘 닦지도 않는다.'},
-      {id:'sneakers', x:.69, y:.855, t:'운동화',
+      {id:'sneakers', x:.70, y:.885, t:'운동화',
        p:'안건호의 운동화.\n뒤꿈치를 꺾어 신는 버릇이 여전하다.'}]},
   living:{ name:'거실', img:'living', start:.5,
     links:[
@@ -349,7 +349,7 @@ function render(){
   updateCount(); renderBottom();
 }
 function left(id){ return NODES[id].objs.filter(o=>!found.has(o.id)).length; }
-function updateCount(){ $('#count').textContent = unlocked ? `찾은 물건 ${found.size} / ${ALL.length}` : ''; $('#dusk').style.opacity = unlocked ? (found.size/ALL.length*.5).toFixed(3) : 0; }
+function updateCount(){ $('#count').textContent = unlocked ? `찾은 물건 ${found.size} / ${ALL.length}` : ''; const p=unlocked?found.size/ALL.length:0; const q=Math.pow(p,1.25); $('#photo').style.filter=`brightness(${(1-.5*q).toFixed(3)}) saturate(${(1-.35*q).toFixed(3)}) contrast(${(1+.05*q).toFixed(3)})`; }
 function renderBottom(){
   const n=NODES[cur], b=$('#bottom'); b.innerHTML='';
   const add=(label,fn,extra='')=>{const c=document.createElement('button');c.className='chip';c.innerHTML=label+extra;c.onclick=fn;b.appendChild(c);};
@@ -573,7 +573,7 @@ $('#cardClose').onclick=()=>$('#cardOv').classList.remove('on');
     ['img/corridor.jpg',190],['img/door.jpg',125],['img/entry.jpg',115],['img/living.jpg',170],['img/kitchen.jpg',117],
     ['img/bedroom.jpg',98],['img/storage.jpg',134],['img/bath.jpg',88],['img/balcony.jpg',187],['img/memo.jpg',53],
     ['audio/ambience.mp3',1876],['audio/laptop.mp3',1790],['audio/door_open.mp3',55],['audio/door_close.mp3',25],
-    ['audio/end_unlock.mp3',44],['audio/end_clunk.mp3',18],['audio/end_lock.mp3',24],['audio/voice_geonho.mp3',10]];
+    ['audio/end_unlock.mp3',44],['audio/end_clunk.mp3',18],['audio/end_lock.mp3',24],['img/entry_night.jpg',150],['audio/voice_geonho.mp3',10]];
   const total=files.reduce((a,f)=>a+f[1],0); const got=files.map(()=>0); let finished=false;
   const draw=()=>{ const p=Math.min(100,Math.round(got.reduce((a,b)=>a+b,0)/total*100)); $('#loadTxt').textContent='불러오는 중… '+p+'%'; $('#loadBar').style.width=p+'%'; };
   const done=()=>{ if(finished) return; finished=true; $('#load').style.display='none'; $('#startBtn').classList.add('ready'); };
@@ -634,7 +634,7 @@ function endNext(){
     if(fx==='beeps') [1900,1900,1900,1900].forEach((f,i)=>beep(f,.05,i*.18));
     if(fx==='melody') sfx('end_unlock');
     if(fx==='clunk'){ const u=SFX.end_unlock, go2=()=>sfxThen('end_clunk',()=>sfx('end_lock',.9)); if(!u.paused&&!u.ended){ u.onended=()=>{u.onended=null;go2();}; } else go2(); }
-    if(fx==='light') $('#ending').classList.add('lit');
+    if(fx==='light'){ $('#ending').classList.add('lit'); try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); nz(0,.025,'highpass',2500,.35); tone(.01,1200,800,.02,.05);}catch(e){} }
     if(fx==='voice') sfx('voice_geonho');
     d.classList.add('on'); pi++; return; }
   if(ei<END.length){ fading=true; [...$('#endLines').children].forEach(x=>x.classList.remove('on'));
