@@ -484,9 +484,23 @@ function musRoom(id,sec){ const r=MUS_ROOM[id]; r?musSet(r[0],r[1],sec):musSet(0
 
 
 /* ================= 실제 도어락 효과음 ================= */
-const SFX={}; ['door_open','door_close','end_unlock','end_clunk','end_lock','voice_geonho'].forEach(k=>{const a=new Audio('audio/'+k+'.mp3');a.preload='auto';SFX[k]=a;});
-function sfx(k,vol=1){ try{ const a=SFX[k]; a.pause(); a.currentTime=0; a.volume=muted?0:vol; const p=a.play(); if(p) p.catch(()=>{}); return a; }catch(e){} }
-function sfxThen(k,next,vol=1){ const a=sfx(k,vol); if(a) a.onended=()=>{ a.onended=null; next&&next(); }; }
+/* 효과음은 Web Audio 버퍼로 재생 (아이폰에서 가장 안정적) */
+const SFX_NAMES=['door_open','door_close','end_unlock','end_clunk','end_lock','voice_geonho'];
+const SFX={}, SFXBUF={}, SFXPLAY={};
+SFX_NAMES.forEach(k=>{ const a=new Audio('audio/'+k+'.mp3'); a.preload='auto'; SFX[k]=a; });
+function audioCtx(){ try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); if(ac.state!=='running') ac.resume(); }catch(e){} return ac; }
+async function loadSfx(){ const c=audioCtx(); if(!c) return;
+  await Promise.all(SFX_NAMES.map(async k=>{ if(SFXBUF[k]) return; try{ const r=await fetch('audio/'+k+'.mp3'); const ab=await r.arrayBuffer();
+    SFXBUF[k]=await new Promise((res,rej)=>{ const p=c.decodeAudioData(ab,res,rej); if(p&&p.then) p.then(res,rej); }); }catch(e){} })); }
+function sfx(k,vol=1){
+  const c=audioCtx();
+  if(c && SFXBUF[k]){ try{ const src=c.createBufferSource(); src.buffer=SFXBUF[k]; const g=c.createGain(); g.gain.value=muted?0:vol;
+      src.connect(g); g.connect(c.destination); src.start(); const h={ playing:true, onended:null };
+      src.onended=()=>{ h.playing=false; h.onended&&h.onended(); }; SFXPLAY[k]=h; return h; }catch(e){} }
+  try{ const a=SFX[k]; a.pause(); a.currentTime=0; a.volume=muted?0:vol; const p=a.play(); if(p) p.catch(()=>{});
+    const h={ playing:true, onended:null }; a.onended=()=>{ h.playing=false; h.onended&&h.onended(); }; SFXPLAY[k]=h; return h; }catch(e){}
+}
+function sfxThen(k,next,vol=1){ const h=sfx(k,vol); if(h) h.onended=()=>{ h.onended=null; next&&next(); }; else next&&next(); }
 
 
 /* ================= 물건 소리 ================= */
@@ -589,7 +603,7 @@ $('#cardClose').onclick=()=>$('#cardOv').classList.remove('on');
 })();
 
 /* ================= 타이틀·엔딩 ================= */
-$('#startBtn').onclick=async()=>{ beep(1,.001,0,.0001); Object.values(SFX).forEach(a=>{a.muted=true;const p=a.play();if(p)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;}).catch(()=>{a.muted=false;});}); ambInit(); $('#title').classList.remove('on'); await show('corridor'); $('#hint').style.opacity=1; };
+$('#startBtn').onclick=async()=>{ try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){} audioCtx(); beep(1,.001,0,.0001); Object.values(SFX).forEach(a=>{a.muted=true;const p=a.play();if(p)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;}).catch(()=>{a.muted=false;});}); loadSfx(); ambInit(); $('#title').classList.remove('on'); await show('corridor'); $('#hint').style.opacity=1; };
 const END=[
   ['sfx','삑, 삑, 삑, 삑.','beeps'],
   ['sfx','띠리릭.','melody'],
@@ -633,7 +647,7 @@ function endNext(){
   if(pi<page.length){ const {d,fx}=page[pi];
     if(fx==='beeps') [1900,1900,1900,1900].forEach((f,i)=>beep(f,.05,i*.18));
     if(fx==='melody') sfx('end_unlock');
-    if(fx==='clunk'){ const u=SFX.end_unlock, go2=()=>sfxThen('end_clunk',()=>sfx('end_lock',.9)); if(!u.paused&&!u.ended){ u.onended=()=>{u.onended=null;go2();}; } else go2(); }
+    if(fx==='clunk'){ const u=SFXPLAY.end_unlock, go2=()=>sfxThen('end_clunk',()=>sfx('end_lock',.9)); if(u&&u.playing){ u.onended=()=>{u.onended=null;go2();}; } else go2(); }
     if(fx==='light'){ $('#ending').classList.add('lit'); try{ ac=ac||new (window.AudioContext||window.webkitAudioContext)(); nz(0,.025,'highpass',2500,.35); tone(.01,1200,800,.02,.05);}catch(e){} }
     if(fx==='voice') sfx('voice_geonho');
     d.classList.add('on'); pi++; return; }
@@ -641,7 +655,8 @@ function endNext(){
     setTimeout(()=>{ buildPage(); pi=0; fading=false; endNext(); },1000); return; }
   ambSet(.3,1200,2.5); $('#ending').classList.remove('on'); $('#final').classList.add('on');
 }
-$('#ending').onclick=endNext;
+$('#ending').onclick=()=>{ audioCtx(); endNext(); };
+document.addEventListener('pointerdown',()=>{ if(ac&&ac.state!=='running') ac.resume(); },true);
 $('#again').onclick=()=>{ endedOnce=false; ambRoom('corridor',1.5); musSet(0,600,1.5); found.clear(); unlocked=false; fails=0; $('#final').classList.remove('on'); $('#title').classList.add('on'); };
 </script>
 </body>
