@@ -108,6 +108,12 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
 #title h1{font-family:'Gowun Batang',serif;font-size:31px;margin:0 0 10px;line-height:1.4;text-shadow:0 2px 14px #000}
 #title .sub{color:#d6cfc3;font-size:14px;margin-bottom:54px;text-shadow:0 1px 6px #000}
 .btn{border:1px solid rgba(255,255,255,.45);padding:12px 28px;border-radius:999px;font-size:15px;background:rgba(0,0,0,.25);color:var(--ink);text-decoration:none;display:inline-block}
+#load{height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:13px;color:#d6cfc3;text-shadow:0 1px 6px #000}
+#load .bar{width:160px;height:2px;background:rgba(255,255,255,.18);border-radius:2px;overflow:hidden}
+#load .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#startBtn{display:none}
+#startBtn.ready{display:inline-block;animation:fadeIn .8s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 #title .foot{position:absolute;bottom:26px;left:0;right:0;font-size:12px;color:#aaa}
 #ending{background:#08080a;cursor:pointer;overflow:hidden}
 #ending::before{content:'';position:absolute;inset:0;background:url(img/entry.jpg) 50% center/cover;filter:brightness(1.25) saturate(1.1) sepia(.15);opacity:0;transition:opacity 2.2s}
@@ -162,6 +168,7 @@ button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer
     <div class="date">12 · 17</div>
     <h1>의정부,<br>2층 끝 집</h1>
     <div class="sub">붓다 섯다 · 12월 17일</div>
+    <div id="load"><span id="loadTxt">불러오는 중… 0%</span><div class="bar"><i id="loadBar"></i></div></div>
     <button class="btn" id="startBtn">들어가 보기</button>
     <div class="foot">망통</div>
   </section>
@@ -477,7 +484,7 @@ function musRoom(id,sec){ const r=MUS_ROOM[id]; r?musSet(r[0],r[1],sec):musSet(0
 
 
 /* ================= 실제 도어락 효과음 ================= */
-const SFX={}; ['door_open','door_close','end_unlock','end_clunk','end_lock'].forEach(k=>{const a=new Audio('audio/'+k+'.mp3');a.preload='auto';SFX[k]=a;});
+const SFX={}; ['door_open','door_close','end_unlock','end_clunk','end_lock','voice_geonho'].forEach(k=>{const a=new Audio('audio/'+k+'.mp3');a.preload='auto';SFX[k]=a;});
 function sfx(k,vol=1){ try{ const a=SFX[k]; a.pause(); a.currentTime=0; a.volume=muted?0:vol; const p=a.play(); if(p) p.catch(()=>{}); return a; }catch(e){} }
 function sfxThen(k,next,vol=1){ const a=sfx(k,vol); if(a) a.onended=()=>{ a.onended=null; next&&next(); }; }
 
@@ -559,13 +566,35 @@ async function makeCard(){
 $('#openCard').onclick=async()=>{ $('#cardOv').classList.add('on'); $('#cardImg').removeAttribute('src'); const u=await makeCard(); $('#cardImg').src=u; $('#cardDl').href=u; };
 $('#cardClose').onclick=()=>$('#cardOv').classList.remove('on');
 
+
+/* ================= 불러오기 ================= */
+(function preload(){
+  const files=[
+    ['img/corridor.jpg',190],['img/door.jpg',125],['img/entry.jpg',115],['img/living.jpg',170],['img/kitchen.jpg',117],
+    ['img/bedroom.jpg',98],['img/storage.jpg',134],['img/bath.jpg',88],['img/balcony.jpg',187],['img/memo.jpg',53],
+    ['audio/ambience.mp3',1876],['audio/laptop.mp3',1790],['audio/door_open.mp3',55],['audio/door_close.mp3',25],
+    ['audio/end_unlock.mp3',44],['audio/end_clunk.mp3',18],['audio/end_lock.mp3',24],['audio/voice_geonho.mp3',10]];
+  const total=files.reduce((a,f)=>a+f[1],0); const got=files.map(()=>0); let finished=false;
+  const draw=()=>{ const p=Math.min(100,Math.round(got.reduce((a,b)=>a+b,0)/total*100)); $('#loadTxt').textContent='불러오는 중… '+p+'%'; $('#loadBar').style.width=p+'%'; };
+  const done=()=>{ if(finished) return; finished=true; $('#load').style.display='none'; $('#startBtn').classList.add('ready'); };
+  setTimeout(done,15000); // 너무 오래 걸리면 그냥 들어갈 수 있게
+  Promise.all(files.map(async([u,kb],i)=>{
+    try{ const r=await fetch(u); const len=+r.headers.get('content-length')||kb*1024;
+      if(r.body&&r.body.getReader){ const rd=r.body.getReader(); let n=0;
+        for(;;){ const {done:d,value}=await rd.read(); if(d) break; n+=value.length; got[i]=Math.min(1,n/len)*kb; draw(); } }
+      else await r.arrayBuffer();
+    }catch(e){}
+    got[i]=kb; draw();
+  })).then(()=>setTimeout(done,300));
+})();
+
 /* ================= 타이틀·엔딩 ================= */
 $('#startBtn').onclick=async()=>{ beep(1,.001,0,.0001); Object.values(SFX).forEach(a=>{a.muted=true;const p=a.play();if(p)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;}).catch(()=>{a.muted=false;});}); ambInit(); $('#title').classList.remove('on'); await show('corridor'); $('#hint').style.opacity=1; };
 const END=[
   ['sfx','삑, 삑, 삑, 삑.','beeps'],
   ['sfx','띠리릭.','melody'],
   ['sfx','철커덩.','clunk'],
-  ['q','“건호야.”'],
+  ['q','“건호야.”','voice'],
   ['n','성현의 목소리.'],
   ['n','평소보다 일찍 돌아왔다.'],
   ['q','“밖에 춥지?”'],
@@ -606,6 +635,7 @@ function endNext(){
     if(fx==='melody') sfx('end_unlock');
     if(fx==='clunk'){ const u=SFX.end_unlock, go2=()=>sfxThen('end_clunk',()=>sfx('end_lock',.9)); if(!u.paused&&!u.ended){ u.onended=()=>{u.onended=null;go2();}; } else go2(); }
     if(fx==='light') $('#ending').classList.add('lit');
+    if(fx==='voice') sfx('voice_geonho');
     d.classList.add('on'); pi++; return; }
   if(ei<END.length){ fading=true; [...$('#endLines').children].forEach(x=>x.classList.remove('on'));
     setTimeout(()=>{ buildPage(); pi=0; fading=false; endNext(); },1000); return; }
